@@ -21,6 +21,9 @@ variable "storage" {
 resource "azurerm_resource_group" "rg" {
   location = var.location
   name     = var.rg
+  tags = {
+    environment = "Terraform"
+  }
 }
 
 # Create a storage account
@@ -41,4 +44,7 @@ resource "azurerm_storage_container" "container" {
   name                  = "ghdevcontainer"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+  metadata = {
+    environment = "Terraform"
+  }
 }
