@@ -13,5 +13,12 @@ terraform {
 
 provider "azurerm" {
   subscription_id = "ca72a60d-fa94-4fb1-b5fc-ae5f7416a474"
-  features {}
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy = true
+    }
+  }
 }
+
+# Configure the random provider
+provider "random" {}
