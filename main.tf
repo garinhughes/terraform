@@ -69,6 +69,13 @@ resource "azurerm_subnet" "subnet1" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+  delegation {
+    name = "postgresql"
+    service_delegation {
+      name    = "Microsoft.DBforPostgreSQL/flexibleServers"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
 }
 
 # Create a random password for PostgreSQL admin
@@ -119,20 +126,39 @@ resource "azurerm_key_vault_secret" "postgres_password" {
   key_vault_id = azurerm_key_vault.kv.id
 }
 
+# Create a private DNS zone for PostgreSQL
+resource "azurerm_private_dns_zone" "postgres" {
+  name                = "ghdev.postgres.database.azure.com"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Link the private DNS zone to the virtual network
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres_vnet_link" {
+  name                  = "ghdev-postgres-vnet-link"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres.name
+  virtual_network_id    = azurerm_virtual_network.vnet.id
+  registration_enabled  = false
+}
+
 # Create a burstable PostgreSQL database
-# resource "azurerm_postgresql_flexible_server" "postgres" {
-#   name                   = "ghdev-postgres"
-#   resource_group_name    = azurerm_resource_group.rg.name
-#   location               = azurerm_resource_group.rg.location
-#   administrator_login    = "adminuser"
-#   administrator_password = random_password.postgres_password.result
-#   sku_name               = "Standard_B1ms"
-#   version                = "16"
-#   storage_mb             = 32768
-#   backup_retention_days  = 7
-#   geo_redundant_backup   = "Disabled"
-#   delegated_subnet_id    = azurerm_subnet.subnet1.id
-# }
+resource "azurerm_postgresql_flexible_server" "postgres" {
+  name                          = "ghdev-postgres"
+  resource_group_name           = azurerm_resource_group.rg.name
+  location                      = azurerm_resource_group.rg.location
+  zone                          = "1"
+  administrator_login           = "wabi"
+  administrator_password        = random_password.postgres_password.result
+  sku_name                      = "B_Standard_B1ms" # burstable 1 vcpu, 2 GiB
+  storage_tier                  = "P4"              # 120 iops
+  public_network_access_enabled = false
+  version                       = "16"
+  storage_mb                    = 32768
+  backup_retention_days         = 7
+  delegated_subnet_id           = azurerm_subnet.subnet1.id
+  private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
+  depends_on                    = [azurerm_private_dns_zone_virtual_network_link.postgres_vnet_link]
+}
 
 # # Create a Kubernetes cluster
 # resource "azurerm_kubernetes_cluster" "aks" {
