@@ -139,6 +139,21 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres_vnet_link" {
   private_dns_zone_name = azurerm_private_dns_zone.postgres.name
   virtual_network_id    = azurerm_virtual_network.vnet.id
   registration_enabled  = false
+  tags = {
+    environment = "Terraform"
+  }
+}
+
+# Link the private DNS zone to the AKS VNet for DNS resolution from AKS
+resource "azurerm_private_dns_zone_virtual_network_link" "postgres_aks_vnet_link" {
+  name                  = "ghdev-postgres-aks-vnet-link"
+  resource_group_name   = azurerm_resource_group.rg.name
+  private_dns_zone_name = azurerm_private_dns_zone.postgres.name
+  virtual_network_id    = data.azurerm_virtual_network.aks_vnet.id
+  registration_enabled  = false
+  tags = {
+    environment = "Terraform"
+  }
 }
 
 # Create a burstable PostgreSQL database
@@ -158,22 +173,94 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   delegated_subnet_id           = azurerm_subnet.subnet1.id
   private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
   depends_on                    = [azurerm_private_dns_zone_virtual_network_link.postgres_vnet_link]
+
+  tags = {
+    environment = "Terraform"
+  }
 }
 
-# # Create a Kubernetes cluster
-# resource "azurerm_kubernetes_cluster" "aks" {
-#   name                = "ghdev-aks"
-#   location            = azurerm_resource_group.rg.location
-#   resource_group_name = azurerm_resource_group.rg.name
-#   dns_prefix          = "ghdev-aks"
+# Create a PostgreSQL database for the portal app
+resource "azurerm_postgresql_flexible_server_database" "portal_db" {
+  name      = "portal"
+  server_id = azurerm_postgresql_flexible_server.postgres.id
+  collation = "en_US.utf8"
+  charset   = "UTF8"
+}
 
-#   default_node_pool {
-#     name       = "default"
-#     node_count = 1
-#     vm_size    = "Standard_B2s"
-#   }
+# Create a container registry
+resource "azurerm_container_registry" "acr" {
+  name                = "ghdevregistry" # ghdevregistry.azurecr.io
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  sku                 = "Basic"
+  admin_enabled       = true
 
-#   identity {
-#     type = "SystemAssigned"
-#   }
-# }
+  tags = {
+    environment = "Terraform"
+  }
+}
+
+# Don't forget to login to the ACR and push your container image
+# az acr login --name ghdevregistry
+# docker build -t ghdevregistry.azurecr.io/myimage:1.0 .
+# docker push ghdevregistry.azurecr.io/myimage:1.0
+
+# Create a Kubernetes cluster
+resource "azurerm_kubernetes_cluster" "aks" {
+  name                = "ghdev-aks"
+  dns_prefix          = "ghdev-aks"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+
+  default_node_pool {
+    name                 = "nodepool"
+    vm_size              = "Standard_A2_v2"
+    min_count            = 1
+    max_count            = 2
+    auto_scaling_enabled = true
+  }
+  identity {
+    type = "SystemAssigned"
+  }
+  tags = {
+    environment = "Terraform"
+  }
+}
+
+# Grant AKS managed identity permission to pull from ACR
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+}
+
+# Reference the remote AKS VNet
+# This data source allows us to get the ID of the existing AKS VNet in the MC_ghdev-rg_ghdev-aks_uksouth resource group
+data "azurerm_virtual_network" "aks_vnet" {
+  name                = "aks-vnet-14252819"
+  resource_group_name = "MC_ghdev-rg_ghdev-aks_uksouth"
+}
+
+# Peer from ghdev-vnet to AKS VNet
+resource "azurerm_virtual_network_peering" "ghdev_to_aks" {
+  name                         = "ghdev-to-aks"
+  resource_group_name          = azurerm_resource_group.rg.name
+  virtual_network_name         = azurerm_virtual_network.vnet.name
+  remote_virtual_network_id    = data.azurerm_virtual_network.aks_vnet.id
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+  allow_virtual_network_access = true
+}
+
+# Peer from AKS VNet to ghdev-vnet
+resource "azurerm_virtual_network_peering" "aks_to_ghdev" {
+  name                         = "aks-to-ghdev"
+  resource_group_name          = data.azurerm_virtual_network.aks_vnet.resource_group_name
+  virtual_network_name         = data.azurerm_virtual_network.aks_vnet.name
+  remote_virtual_network_id    = azurerm_virtual_network.vnet.id
+  allow_forwarded_traffic      = true
+  allow_gateway_transit        = false
+  use_remote_gateways          = false
+  allow_virtual_network_access = true
+}
