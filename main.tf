@@ -264,3 +264,36 @@ resource "azurerm_virtual_network_peering" "aks_to_ghdev" {
   use_remote_gateways          = false
   allow_virtual_network_access = true
 }
+
+# Create a public IP for the AKS cluster
+resource "azurerm_public_ip" "public_ip" {
+  name                = "ghdev-aks-public-ip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = "MC_ghdev-rg_ghdev-aks_uksouth"
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  domain_name_label   = "aks-ingress"
+
+  tags = {
+    environment = "Terraform"
+  }
+}
+
+# Create a DNS zone for a custom domain
+# Moving domain management to Azure DNS
+resource "azurerm_dns_zone" "domain_ghdev" {
+  name                = "ghdev.uk"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Don't forget to add the NS records to your domain registrar
+# to point to the Azure DNS nameservers
+
+# Create a DNS A record for the AKS cluster public IP
+resource "azurerm_dns_a_record" "www" {
+  name                = "www"
+  zone_name           = azurerm_dns_zone.domain_ghdev.name
+  resource_group_name = azurerm_resource_group.rg.name
+  ttl                 = 300
+  records             = ["${azurerm_public_ip.public_ip.ip_address}"]
+}
