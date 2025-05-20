@@ -22,3 +22,12 @@ terraform import azurerm_key_vault.kv /subscriptions/$subscription_id/ghdev-rg/p
 # Key Vault Secret (Postgres password)
 # Use latest secret version
 terraform import azurerm_key_vault_secret.postgres_password "https://ghdev-keyvault.vault.azure.net/secrets/postgres-admin-password/83e0f3c0fad34ab3a7450f31c97dddde"
+
+# Private DNS Zone for PostgreSQL
+terraform import azurerm_private_dns_zone.postgres "/subscriptions/$subscription_id/resourceGroups/ghdev-rg/providers/Microsoft.Network/privateDnsZones/ghdev.postgres.database.azure.com"
+
+# Private DNS Zone Virtual Network Link
+terraform import azurerm_private_dns_zone_virtual_network_link.postgres_vnet_link "/subscriptions/$subscription_id/resourceGroups/ghdev-rg/providers/Microsoft.Network/privateDnsZones/ghdev.postgres.database.azure.com/virtualNetworkLinks/ghdev-postgres-vnet-link"
+
+# PostgreSQL Flexible Server
+terraform import azurerm_postgresql_flexible_server.postgres "/subscriptions/$subscription_id/resourceGroups/ghdev-rg/providers/Microsoft.DBforPostgreSQL/flexibleServers/ghdev-postgres"
