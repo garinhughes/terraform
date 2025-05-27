@@ -277,6 +277,7 @@ resource "azurerm_private_dns_zone_virtual_network_link" "postgres_aks_vnet_link
     environment = "Terraform"
   }
 }
+
 resource "azurerm_virtual_network_peering" "ghdev_to_aks" {
   name                         = "ghdev-to-aks"
   resource_group_name          = azurerm_resource_group.rg.name
@@ -297,5 +298,12 @@ resource "azurerm_virtual_network_peering" "aks_to_ghdev" {
   allow_gateway_transit        = false
   use_remote_gateways          = false
   allow_virtual_network_access = true
+}
+
+# Role Assignments
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
 
