@@ -9,6 +9,13 @@ terraform {
       version = "~>3.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "ghdev-rg"
+    storage_account_name = "ghdevstorageaccount"
+    container_name       = "ghdevcontainer"
+    key                  = "terraform.tfstate"
+  }
 }
 
 provider "azurerm" {
@@ -20,5 +27,10 @@ provider "azurerm" {
   }
 }
 
-# Configure the random provider
 provider "random" {}
+
+provider "helm" {
+  kubernetes {
+    config_path = "~/.kube/config"
+  }
+}
