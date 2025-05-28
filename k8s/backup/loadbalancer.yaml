@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: MC_ghdev-rg_ghdev-aks_uksouth
+    service.beta.kubernetes.io/azure-pip-name: ghdev-aks-public-ip
+    service.beta.kubernetes.io/azure-dns-label-name: aks-ingress
+  name: django-lb
+  namespace: ics
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+  selector:
+    app: django-nginx

@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-app
+  namespace: ics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: django-app
+  template:
+    metadata:
+      labels:
+        app: django-app
+      namespace: ics
+    spec:
+      containers:
+      - name: django-app
+        image: ghdevregistry.azurecr.io/portal-django:4.2.15
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_HOST
+          value: "ghdev-postgres.postgres.database.azure.com"
+        - name: DATABASE_USER
+          value: "wabi"
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-db-password
+              key: postgres-admin-password
+        - name: DATABASE_NAME
+          value: "portal"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: "app"
+                    operator: In
+                    values:
+                    - django-app
+              topologyKey: "kubernetes.io/hostname"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: django-backend
+  namespace: ics
+spec:
+  selector:
+    app: django-app
+  type: ClusterIP
+  ports:
+  - port: 8000
+    targetPort: 8000

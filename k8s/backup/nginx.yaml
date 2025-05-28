@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: django-nginx
+  namespace: ics
+spec:
+  selector:
+    matchLabels:
+      app: django-nginx
+  template:
+    metadata:
+      labels:
+        app: django-nginx
+    spec:
+      containers:
+      - name: django-nginx
+        image: ghdevregistry.azurecr.io/portal-nginx:1.28.0
+        imagePullPolicy: Always
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        ports:
+        - containerPort: 80

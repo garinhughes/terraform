@@ -1,0 +1,83 @@
+# Overview
+This guide explains how to configure an NGINX Ingress Controller and cert-manager via Helm manually. In production, Terraform manages both of these resources (`main.tf`), and you only need to run `kubectl apply -f .` to deploy all Kubernetes manifests.
+
+HTTPS is enabled for two domains with a LetsEncrypt certificate, and the public IP remains accessible for testing (`ingress.yaml`).
+
+## Manual Installation and Testing
+
+### NGINX Ingress Controller
+
+#### Install
+```bash
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo update
+
+kubectl create namespace ingress-basic
+helm install nginx-ingress ingress-nginx/ingress-nginx \
+  --namespace ingress-basic \
+  --set controller.replicaCount=2 \
+  --set controller.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.admissionWebhooks.patch.nodeSelector."kubernetes\.io/os"=linux \
+  --set controller.progressDeadlineSeconds=600
+```
+
+#### Monitor and get External IP
+```bash
+kubectl get service --namespace ingress-basic nginx-ingress-ingress-nginx-controller --output wide --watch
+```
+
+#### Apply Ingress Service
+```bash
+kubectl apply -f ingress.yaml
+```
+
+### Let's Encrypt Certificates
+
+#### Install
+```bash
+helm repo add jetstack https://charts.jetstack.io
+helm repo update
+kubectl create namespace cert-manager
+helm install cert-manager jetstack/cert-manager \
+  --namespace cert-manager \
+  --set installCRDs=true
+```
+
+#### Apply Certificate Resources
+```bash
+kubectl apply -f letsencrypt.yaml
+kubectl apply -f certificate.yaml
+```
+
+#### Configure Ingress for TLS
+Update `ingress.yaml` to use the SSL/TLS cert, for example:
+```yaml
+spec:
+  tls:
+  - hosts:
+    - ghdev.uk
+    - www.ghdev.uk
+    secretName: ghdev-uk-tls
+```
+
+### Cleanup
+```bash
+kubectl delete -f certificate.yaml
+kubectl delete -f letsencrypt.yaml
+kubectl delete -f ingress.yaml
+
+kubectl delete secret ghdev-uk-tls -n ics
+kubectl delete certificate ghdev-uk-tls -n ics
+
+helm uninstall cert-manager --namespace cert-manager
+kubectl delete namespace cert-manager
+
+helm uninstall nginx-ingress --namespace ingress-basic
+kubectl delete namespace ingress-basic
+```
+
+## YAML Files Explained
+- **ingress.yaml**: Defines Ingress rules for routing external traffic to your services, and configures TLS if required.
+- **letsencrypt.yaml**: Configures a cert-manager ClusterIssuer or Issuer for Let's Encrypt certificate provisioning.
+- **certificate.yaml**: Requests a TLS certificate for your domain(s) using cert-manager and the configured issuer.
+

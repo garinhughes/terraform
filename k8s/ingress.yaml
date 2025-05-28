@@ -1,0 +1,42 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: django-ingress
+  namespace: ics
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - ghdev.uk
+    - www.ghdev.uk
+    secretName: ghdev-uk-tls
+  rules:
+  - host: ghdev.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-backend
+            port:
+              number: 8000
+  - host: www.ghdev.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-backend
+            port:
+              number: 8000
+  - http: # public ip fallback for testing, remove in production
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-backend
+            port:
+              number: 8000
