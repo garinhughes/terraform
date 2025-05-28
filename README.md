@@ -64,4 +64,4 @@ Replace the placeholders with your actual resource names. After configuration, r
 1. Run `terraform init -upgrade` to initialize providers and the backend.
 2. Run `terraform plan -out main.tfplan` to prepare the deployment.
 3. Run `terraform apply main.tfplan` to provision all resources.
-4. After deployment, your application will be accessible via the DNS records configured for ghdev.uk and www.ghdev.uk, routed through the NGINX Ingress Controller. You'll need to deploy these separately.
+4. After deployment, your application will be accessible via the DNS records configured for ghdev.uk and www.ghdev.uk, routed through the NGINX Ingress Controller. You'll need to deploy these separately. Follow the instructions in [k8s/README.me](k8s/README.md).
