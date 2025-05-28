@@ -204,8 +204,8 @@ resource "azurerm_kubernetes_cluster" "aks" {
     max_count            = 2
     auto_scaling_enabled = true
     upgrade_settings {
-      max_surge = "10%"
-      drain_timeout_in_minutes = 0
+      max_surge                     = "10%"
+      drain_timeout_in_minutes      = 0
       node_soak_duration_in_minutes = 0
     }
   }
@@ -221,50 +221,17 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 }
 
-# Public IP
-resource "azurerm_public_ip" "public_ip" {
-  name                = "ghdev-aks-public-ip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = var.aks_resource_group
-  allocation_method   = "Static"
-  sku                 = "Standard"
-  domain_name_label   = "aks-ingress"
-
-  tags = {
-    environment = "Terraform"
-  }
-}
-
-# DNS
-resource "azurerm_dns_zone" "domain_ghdev" {
-  name                = "ghdev.uk"
-  resource_group_name = azurerm_resource_group.rg.name
-}
-
-# Don't forget to add the NS records to your domain registrar
-# to point to the Azure DNS nameservers
-
-# Create a DNS A record for the AKS cluster public IP
-resource "azurerm_dns_a_record" "www" {
-  name                = "www"
-  zone_name           = azurerm_dns_zone.domain_ghdev.name
-  resource_group_name = azurerm_resource_group.rg.name
-  ttl                 = 300
-  records             = ["${azurerm_public_ip.public_ip.ip_address}"]
-}
-
-resource "azurerm_dns_a_record" "root" {
-  name                = "@"
-  zone_name           = azurerm_dns_zone.domain_ghdev.name
-  resource_group_name = azurerm_dns_zone.domain_ghdev.resource_group_name
-  ttl                 = 300
-  records             = ["${azurerm_public_ip.public_ip.ip_address}"]
+# AKS to ACR connection
+resource "azurerm_role_assignment" "aks_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
 }
 
 # Network Peerings
 data "azurerm_virtual_network" "aks_vnet" {
-  name                = "aks-vnet-14252819"
-  resource_group_name = "MC_ghdev-rg_ghdev-aks_uksouth"
+  name                = "aks-vnet-14252819" # replace with your AKS VNet name
+  resource_group_name = azurerm_kubernetes_cluster.aks.node_resource_group
 }
 
 resource "azurerm_private_dns_zone_virtual_network_link" "postgres_aks_vnet_link" {
@@ -300,10 +267,82 @@ resource "azurerm_virtual_network_peering" "aks_to_ghdev" {
   allow_virtual_network_access = true
 }
 
-# Role Assignments
-resource "azurerm_role_assignment" "aks_acr_pull" {
-  scope                = azurerm_container_registry.acr.id
-  role_definition_name = "AcrPull"
-  principal_id         = azurerm_kubernetes_cluster.aks.kubelet_identity[0].object_id
+# NGINX Ingress Controller via Helm
+resource "helm_release" "nginx_ingress" {
+  name       = "nginx-ingress"
+  namespace  = "ingress-nginx"
+  repository = "https://kubernetes.github.io/ingress-nginx"
+  chart      = "ingress-nginx"
+  version    = "4.10.0"
+
+  create_namespace = true
+
+  set {
+    name  = "controller.replicaCount"
+    value = "2"
+  }
+  set {
+    name  = "controller.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
+  }
+  set {
+    name  = "controller.admissionWebhooks.patch.nodeSelector.kubernetes\\.io/os"
+    value = "linux"
+  }
+  set {
+    name  = "controller.service.externalTrafficPolicy" # preserve client source IP
+    value = "Local"
+  }
+  set {
+    name  = "controller.progressDeadlineSeconds"
+    value = "600"
+  }
+}
+
+# cert-manager via Helm
+resource "helm_release" "cert_manager" {
+  name       = "cert-manager"
+  namespace  = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  version    = "1.14.5"
+
+  create_namespace = true
+
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+}
+
+# Get the external IP of the NGINX Ingress Controller
+data "kubernetes_service" "nginx_ingress" {
+  metadata {
+    name      = "nginx-ingress-ingress-nginx-controller"
+    namespace = "ingress-nginx"
+  }
+  depends_on = [helm_release.nginx_ingress]
+}
+
+# DNS
+resource "azurerm_dns_zone" "domain_ghdev" {
+  name                = "ghdev.uk"
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_dns_a_record" "root" {
+  name                = "@"
+  zone_name           = azurerm_dns_zone.domain_ghdev.name
+  resource_group_name = azurerm_dns_zone.domain_ghdev.resource_group_name
+  ttl                 = 300
+  records             = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip]
+}
+
+resource "azurerm_dns_a_record" "www" {
+  name                = "www"
+  zone_name           = azurerm_dns_zone.domain_ghdev.name
+  resource_group_name = azurerm_dns_zone.domain_ghdev.resource_group_name
+  ttl                 = 300
+  records             = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip]
 }
 
