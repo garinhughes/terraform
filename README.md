@@ -1,8 +1,6 @@
 # terraform
 
-This Terraform configuration provisions a set of Azure resources for a Kubernetes-based application deployment. There's a lot configured here that ideally needs separating into Terraform modules. If testig, my advice would be to break this configuration down into chunks, despite being in a logical creation order.
-
-Below is an overview of the main resources and their relationships:
+This Terraform configuration provisions a set of Azure resources for a Kubernetes-based application deployment. There's a lot configured here that ideally needs separating into Terraform modules. If testing, my advice would be to break this configuration down into chunks, despite being in a logical creation order.
 
 ## Main Resources
 
@@ -59,11 +57,11 @@ terraform {
 }
 ```
 
-Replace the placeholders with your actual resource names. After configuration, run `terraform init` to migrate or initialize the backend. If you've already done this locally, you may need to migrate the state with `terraform init -migrate-state`.
+Replace the placeholders with your actual resource names. After configuration, run `terraform init` to initialize the backend. If you've already done this locally before configuring the backend, you may need to migrate the state with `terraform init -migrate-state`.
 
 ## Usage
 
 1. Run `terraform init -upgrade` to initialize providers and the backend.
 2. Run `terraform plan -out main.tfplan` to prepare the deployment.
-3. Run `terraform apply` to provision all resources.
+3. Run `terraform apply main.tfplan` to provision all resources.
 4. After deployment, your application will be accessible via the DNS records configured for ghdev.uk and www.ghdev.uk, routed through the NGINX Ingress Controller. You'll need to deploy these separately.
