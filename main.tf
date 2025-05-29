@@ -46,10 +46,31 @@ resource "azurerm_storage_account" "storage" {
   }
 }
 
+# Terraform state
 resource "azurerm_storage_container" "container" {
   name                  = "ghdevcontainer"
   storage_account_name  = azurerm_storage_account.storage.name
   container_access_type = "private"
+  metadata = {
+    environment = "Terraform"
+  }
+}
+
+# Django static files
+resource "azurerm_storage_container" "static" {
+  name                  = "static"
+  storage_account_name  = azurerm_storage_account.storage.name
+  container_access_type = "blob"
+  metadata = {
+    environment = "Terraform"
+  }
+}
+
+# Django media files
+resource "azurerm_storage_container" "media" {
+  name                  = "media"
+  storage_account_name  = azurerm_storage_account.storage.name
+  container_access_type = "blob"
   metadata = {
     environment = "Terraform"
   }

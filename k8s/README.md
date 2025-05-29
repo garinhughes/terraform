@@ -77,7 +77,14 @@ kubectl delete namespace ingress-basic
 ```
 
 ## YAML Files Explained
+- **djangoapp.yaml**: Deployment and Cluster IP service for Django app.
 - **ingress.yaml**: Defines Ingress rules for routing external traffic to your services, and configures TLS if required.
 - **letsencrypt.yaml**: Configures a cert-manager ClusterIssuer or Issuer for Let's Encrypt certificate provisioning.
 - **certificate.yaml**: Requests a TLS certificate for your domain(s) using cert-manager and the configured issuer.
 
+## Secrets
+Get the storage account key and create a k8s secret
+```bash
+az storage account keys list --account-name ghdevstorageaccount --resource-group ghdev-rg --query "[0].value" -o tsv
+kubectl create secret generic azure-storage-secret --from-literal=azurestorageaccountkey=<account-key>
+```

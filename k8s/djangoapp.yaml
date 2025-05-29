@@ -30,6 +30,13 @@ spec:
             secretKeyRef:
               name: postgres-db-password
               key: postgres-admin-password
+        - name: AZURE_ACCOUNT_NAME
+          value: "ghdevstorageaccount"
+        - name: AZURE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: azure-storage-secret
+              key: azurestorageaccountkey
         - name: DATABASE_NAME
           value: "portal"
       affinity:
