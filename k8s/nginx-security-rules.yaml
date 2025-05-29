@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-security-rules
+  namespace: ics
+data:
+  server-snippet: |
+    # Block common WordPress and sensitive file probes
+    location ~* ^/(wp-admin|wp-login\.php|xmlrpc\.php|wp-content|wp-includes|wordpress) {
+      deny all;
+      return 444;
+    }
+    location ~* ^/(\.env|\.git|\.htaccess|\.DS_Store|\.svn|\.hg|composer\.json|composer\.lock|package\.json|yarn\.lock|\.bashrc|\.bash_profile|\.ssh|id_rsa|id_rsa.pub|\.aws|\.azure|\.docker|\.kube) {
+      deny all;
+      return 444;
+    }
+    # Block requests with suspicious query parameters
+    if ($arg_XDEBUG_SESSION_START) { return 444; }
+    if ($arg_XDEBUG_SESSION) { return 444; }
+    if ($arg_PHPSESSID) { return 444; }
+    if ($arg_debug) { return 444; }
+    if ($arg_debug_session_start) { return 444; }
+    if ($arg_testcookie) { return 444; }
+    if ($arg_c99) { return 444; }
+    if ($arg_shell) { return 444; }
+    if ($arg_cmd) { return 444; }
+    if ($arg_exec) { return 444; }
+    if ($arg_system) { return 444; }
+    if ($arg_eval) { return 444; }
+    if ($arg_include) { return 444; }
+    if ($arg_require) { return 444; }

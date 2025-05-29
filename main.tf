@@ -326,6 +326,10 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.enableOwaspModsecurityCrs"
     value = "true"
   }
+  set {
+    name  = "controller.configMapRef"
+    value = "ics/nginx-security-rules" # <namespace>/<configmap>
+  }
 }
 
 # cert-manager via Helm
