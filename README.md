@@ -17,7 +17,7 @@ This Terraform configuration provisions a set of Azure resources for a Kubernete
 - **Role Assignment**: Grants AKS permission to pull images from ACR.
 - **Virtual Network Peerings**: Bi-directional peering between the main VNet and the AKS VNet for network connectivity.
 - **Helm Releases**:
-  - **NGINX Ingress Controller**: Deployed via Helm in its own namespace, exposes services via LoadBalancer.
+  - **NGINX Ingress Controller**: Deployed via Helm, exposes services via LoadBalancer. Integrated WAF with OWASP CRS.
   - **cert-manager**: Deployed via Helm for automated TLS certificate management.
 - **DNS Zone & Records**: Public DNS zone for ghdev.uk, with A records for root and www pointing to the NGINX Ingress external IP.
 

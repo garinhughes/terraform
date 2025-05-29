@@ -318,6 +318,14 @@ resource "helm_release" "nginx_ingress" {
     name  = "controller.progressDeadlineSeconds"
     value = "600"
   }
+  set {
+    name  = "controller.enableModsecurity" # WAF
+    value = "true"
+  }
+  set {
+    name  = "controller.enableOwaspModsecurityCrs"
+    value = "true"
+  }
 }
 
 # cert-manager via Helm
