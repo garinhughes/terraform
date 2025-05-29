@@ -88,3 +88,18 @@ Get the storage account key and create a k8s secret
 az storage account keys list --account-name ghdevstorageaccount --resource-group ghdev-rg --query "[0].value" -o tsv
 kubectl create secret generic azure-storage-secret --from-literal=azurestorageaccountkey=<account-key>
 ```
+
+## NGINX WAF Rules
+The OWASP CSR (core rule set) is already enabled on the NGINX Ingress Controller but you can add custom rules as follows.
+
+1. Add custom rules to [nginx-security-rules.yaml](nginx-security-rules.yaml)
+2. Re-apply the ConfigMap
+```bash
+kubectl apply -f nginx-security-rules.yaml
+```
+3. Reload the NGINX Ingress Controller
+```bash
+kubectl rollout restart deployment -n ingress-nginx nginx-ingress-ingress-nginx-controller 
+```
+
+Note: this needs more testing. Azure AKS NGINX Ingress Controller denies the use of certain snippet directives for rules so they may need to be placed elsewhere. Enabling them allows flexibility but has security implications (isolation between users and applications).
