@@ -346,3 +346,46 @@ resource "azurerm_dns_a_record" "www" {
   records             = [data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip]
 }
 
+# Network Security Group for PostgreSQL subnet
+resource "azurerm_network_security_group" "pg_nsg" {
+  name                = "pg-subnet-nsg"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  tags = {
+    environment = "Terraform"
+  }
+}
+
+resource "azurerm_network_security_rule" "allow_aks_postgres" {
+  name                        = "Allow-AKS-Postgres"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "5432"
+  source_address_prefix       = "10.224.0.0/16" # AKS subnet
+  destination_address_prefix  = "*"
+  network_security_group_name = azurerm_network_security_group.pg_nsg.name
+  resource_group_name         = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_network_security_rule" "deny_all_inbound" {
+  name                        = "Deny-All-Inbound"
+  priority                    = 4096
+  direction                   = "Inbound"
+  access                      = "Deny"
+  protocol                    = "*"
+  source_port_range           = "*"
+  destination_port_range      = "*"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  network_security_group_name = azurerm_network_security_group.pg_nsg.name
+  resource_group_name         = azurerm_resource_group.rg.name
+}
+
+resource "azurerm_subnet_network_security_group_association" "pg_subnet_assoc" {
+  subnet_id                 = azurerm_subnet.pg_subnet.id
+  network_security_group_id = azurerm_network_security_group.pg_nsg.id
+}
+
