@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: django-app
-        image: ghdevregistry.azurecr.io/portal-django:4.2.15
+        image: ghdevregistry.azurecr.io/portal-django:5.0.14
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
