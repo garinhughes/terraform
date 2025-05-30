@@ -9,6 +9,16 @@ spec:
     privateKeySecretRef:
       name: letsencrypt-prod
     solvers:
-    - http01:
-        ingress:
-          class: nginx
+    - dns01:
+        azureDNS:
+          clientID: b71cc23a-06d7-48e7-861c-90167507a8ff
+          clientSecretSecretRef:
+            name: azuredns-config
+            key: client-secret
+          subscriptionID: ca72a60d-fa94-4fb1-b5fc-ae5f7416a474
+          tenantID: b8405bad-6326-4601-a275-e3f641502677
+          resourceGroupName: ghdev-rg
+          hostedZoneName: ghdev.uk
+          environment: AzurePublicCloud
+
+# kubectl create secret generic azuredns-config --from-literal=client-secret=<YOUR_CLIENT_SECRET> --namespace=cert-manager

@@ -10,8 +10,8 @@ spec:
   ingressClassName: nginx
   tls:
   - hosts:
+    - '*.ghdev.uk'
     - ghdev.uk
-    - www.ghdev.uk
     secretName: ghdev-uk-tls
   rules:
   - host: ghdev.uk
@@ -25,6 +25,16 @@ spec:
             port:
               number: 8000
   - host: www.ghdev.uk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: django-backend
+            port:
+              number: 8000
+  - host: '*.ghdev.uk'
     http:
       paths:
       - path: /

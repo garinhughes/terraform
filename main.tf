@@ -422,3 +422,21 @@ resource "azurerm_subnet_network_security_group_association" "pg_subnet_assoc" {
   network_security_group_id = azurerm_network_security_group.pg_nsg.id
 }
 
+# Certificate Manager sp & role to manage DNS (for wildcard domain)
+resource "azuread_application" "cert_manager" {
+  display_name = "cert-manager-dns"
+}
+
+resource "azuread_service_principal" "cert_manager" {
+  client_id     = azuread_application.cert_manager.client_id
+}
+
+resource "azuread_service_principal_password" "cert_manager" {
+  service_principal_id = azuread_service_principal.cert_manager.id
+}
+
+resource "azurerm_role_assignment" "cert_manager_dns" {
+  scope                = azurerm_dns_zone.domain_ghdev.id
+  role_definition_name = "DNS Zone Contributor"
+  principal_id         = azuread_service_principal.cert_manager.object_id
+}
