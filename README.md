@@ -65,3 +65,10 @@ Replace the placeholders with your actual resource names. After configuration, r
 2. Run `terraform plan -out main.tfplan` to prepare the deployment.
 3. Run `terraform apply main.tfplan` to provision all resources.
 4. After deployment, your application will be accessible via the DNS records configured for ghdev.uk and www.ghdev.uk, routed through the NGINX Ingress Controller. You'll need to deploy these separately. Follow the instructions in [k8s/README.md](k8s/README.md).
+
+## Dev
+To reduce Azure AKS related costs in development, scale down the node pool to 0 as follows.
+```bash
+az aks nodepool scale --resource-group <ResourceGroup> --cluster-name <AKSClusterName> --name <NodePoolName> --node-count 0
+```
+When scaling back up, most services should redeploy, as there's no ephemeral storage in play with this setup.
