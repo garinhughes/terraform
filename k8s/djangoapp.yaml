@@ -4,7 +4,7 @@ metadata:
   name: django-app
   namespace: ics
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: django-app
@@ -39,6 +39,13 @@ spec:
               key: azurestorageaccountkey
         - name: DATABASE_NAME
           value: "portal"
+        - name: REDIS_HOST
+          value: "redis.ics.svc.cluster.local"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-password
+              key: redis-password
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
