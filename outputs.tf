@@ -3,7 +3,7 @@ output "rg" {
   description = "Resource group name"
 }
 
-# output "dns_nameservers" {
-#   value       = azurerm_dns_zone.domain_ghdev.name_servers
-#   description = "DNS nameservers for ghdev.uk DNS zone"
-# }
+output "aks_node_resource_group" {
+  description = "The node resource group created by AKS. The VNet will be in this group."
+  value       = azurerm_kubernetes_cluster.aks.node_resource_group
+}

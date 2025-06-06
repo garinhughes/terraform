@@ -19,10 +19,3 @@ variable "storage" {
 
 # Get current Azure client configuration for Key Vault access policies
 data "azurerm_client_config" "current" {}
-
-variable "aks_resource_group" {
-  type        = string
-  default     = "MC_ghdev-rg_ghdev-aks_uksouth"
-  description = "Resource group name for AKS"
-}
-
