@@ -8,6 +8,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 # Virtual Networks
+# Main
 resource "azurerm_virtual_network" "vnet" {
   name                = "ghdev-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -18,7 +19,19 @@ resource "azurerm_virtual_network" "vnet" {
   }
 }
 
+# AKS
+# resource "azurerm_virtual_network" "aks_vnet" {
+#   name                = "ghdev-aks-vnet"
+#   address_space       = ["10.1.0.0/16"] # Changed to avoid overlap with main VNet
+#   location            = azurerm_resource_group.rg.location
+#   resource_group_name = azurerm_resource_group.rg.name
+#   tags = {
+#     environment = "Terraform"
+#   }
+# }
+
 # Subnets
+# Postgres
 resource "azurerm_subnet" "pg_subnet" {
   name                 = "pg-subnet"
   resource_group_name  = azurerm_resource_group.rg.name
@@ -32,6 +45,26 @@ resource "azurerm_subnet" "pg_subnet" {
     }
   }
 }
+
+# AKS Subnet
+# resource "azurerm_subnet" "aks_subnet" {
+#   name                 = "aks-subnet"
+#   resource_group_name  = azurerm_resource_group.rg.name
+#   virtual_network_name = azurerm_virtual_network.aks_vnet.name
+#   address_prefixes     = ["10.1.0.0/24"] # Subnet within new AKS VNet
+  
+#   delegation {
+#     name = "aks_delegation"
+#     service_delegation {
+#       name    = "Microsoft.ContainerService/managedClusters"
+#       actions = ["Microsoft.Network/virtualNetworks/subnets/action"]
+#     }
+#   }
+  
+#   tags = {
+#     environment = "Terraform"
+#   }
+# }
 
 # Storage
 resource "azurerm_storage_account" "storage" {
