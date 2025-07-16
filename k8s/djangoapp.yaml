@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: django-app
-        image: ghdevregistry.azurecr.io/portal-django:5.0.14
+        image: ghdevazregistry.azurecr.io/portal-django:5.0.14
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
@@ -24,14 +24,14 @@ spec:
         - name: DATABASE_HOST
           value: "ghdev-postgres.postgres.database.azure.com"
         - name: DATABASE_USER
-          value: "wabi"
+          value: "icsadmin"
         - name: DATABASE_PASSWORD
           valueFrom:
             secretKeyRef:
               name: postgres-db-password
               key: postgres-admin-password
         - name: AZURE_ACCOUNT_NAME
-          value: "ghdevstorageaccount"
+          value: "ghdevstorageacc"
         - name: AZURE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:

@@ -8,18 +8,25 @@ terraform {
       source  = "hashicorp/random"
       version = "~>3.0"
     }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~>2.0"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~>2.0"
+    }
   }
-
   backend "azurerm" {
     resource_group_name  = "ghdev-rg"
-    storage_account_name = "ghdevstorageaccount"
-    container_name       = "ghdevcontainer"
+    storage_account_name = "ghdevstorageacc"
+    container_name       = "tfstateapp"
     key                  = "terraform.tfstate"
   }
 }
 
 provider "azurerm" {
-  subscription_id = "ca72a60d-fa94-4fb1-b5fc-ae5f7416a474"
+  subscription_id = "542a0e08-b7f3-4936-9509-d1b7f503ef73"
   features {
     key_vault {
       purge_soft_delete_on_destroy = true

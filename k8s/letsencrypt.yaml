@@ -11,12 +11,12 @@ spec:
     solvers:
     - dns01:
         azureDNS:
-          clientID: b71cc23a-06d7-48e7-861c-90167507a8ff
+          clientID: 238c535b-cd54-490a-a040-d227d178bebd
           clientSecretSecretRef:
             name: azuredns-config
             key: client-secret
-          subscriptionID: ca72a60d-fa94-4fb1-b5fc-ae5f7416a474
-          tenantID: b8405bad-6326-4601-a275-e3f641502677
+          subscriptionID: 542a0e08-b7f3-4936-9509-d1b7f503ef73
+          tenantID: 3f2aff0e-933a-4598-84b5-0ceb168b440e
           resourceGroupName: ghdev-rg
           hostedZoneName: ghdev.uk
           environment: AzurePublicCloud
