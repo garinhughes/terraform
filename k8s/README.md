@@ -85,7 +85,7 @@ kubectl delete namespace ingress-basic
 ## Secrets
 Get the storage account key and create a k8s secret
 ```bash
-az storage account keys list --account-name ghdevstorageaccount --resource-group ghdev-rg --query "[0].value" -o tsv
+az storage account keys list --account-name ghdevstorageacc --resource-group ghdev-rg --query "[0].value" -o tsv
 kubectl create secret generic azure-storage-secret --from-literal=azurestorageaccountkey=<account-key>
 ```
 

@@ -41,10 +41,10 @@ This Terraform configuration provisions a set of Azure resources for a Kubernete
 This project uses an Azure Storage Account as a remote backend for storing the Terraform state file. This ensures state consistency and enables team collaboration. The backend is configured in `providers.tf`, and uses the following Azure resources:
 
 - **Storage Account**: Stores the state file securely in a blob container.
-- **Storage Container**: Dedicated container (e.g., `ghdevcontainer`) for Terraform state blobs.
+- **Storage Container**: Dedicated container (e.g., `tfstatecore`) for Terraform state blobs.
 - **State Locking**: Azure Storage provides state locking to prevent concurrent modifications.
 
-To use the remote backend, ensure the storage account and container are created (as defined in `main.tf`), then configure your backend block, for example:
+To use the remote backend, ensure the storage account and container are created (as defined in `core/main.tf`), then configure your backend block, for example:
 
 ```hcl
 terraform {
@@ -62,9 +62,16 @@ Replace the placeholders with your actual resource names. After configuration, r
 ## Usage
 
 1. Run `terraform init -upgrade` to initialize providers and the backend.
-2. Run `terraform plan -out main.tfplan` to prepare the deployment.
-3. Run `terraform apply main.tfplan` to provision all resources.
+2. Run `terraform plan` to prepare the deployment.
+3. Run `terraform apply` to provision all resources.
 4. After deployment, your application will be accessible via the DNS records configured for ghdev.uk and www.ghdev.uk, routed through the NGINX Ingress Controller. You'll need to deploy these separately. Follow the instructions in [k8s/README.md](k8s/README.md).
+
+## Kubernetes
+After deploying the AKS cluster, add the kubernetes provider then run the following to set/update the context:
+```bash
+az aks get-credentials --resource-group ghdev-rg --name ghdev-aks
+kubectl config set-context --current --namespace=<your-namespace>
+```
 
 ## Dev
 To reduce Azure AKS related costs in development, scale down the node pool to 0 as follows.
